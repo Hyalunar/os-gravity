@@ -86,6 +86,10 @@ typedef struct {
     gravity_bridge_clone        bridge_clone;           // clone
     gravity_bridge_size         bridge_size;            // size of obj
     gravity_bridge_free         bridge_free;            // free obj
+
+    //script control
+    uint32_t            max_opcodes;
+    uint32_t            script_timeout;
 } gravity_delegate_t;
 
 #endif

@@ -15,6 +15,8 @@ static void report_error (gravity_vm *vm, error_type_t error_type,
 int main (void) {
     // configure a VM delegate
     gravity_delegate_t delegate = {.error_callback = report_error};
+    delegate.script_timeout = 0;
+    delegate.max_opcodes = 0;
     
     // compile Gravity source code into bytecode
     gravity_compiler_t *compiler = gravity_compiler_create(&delegate);

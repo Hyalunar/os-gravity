@@ -69,6 +69,9 @@ struct gravity_vm {
     gravity_object_r    graylist;                       // array of collected objects while GC is in process (gray list)
     gravity_object_r    gctemp;                         // array of temp objects that need to be saved from GC
 
+    nanotime_t          start_time;
+    uint32_t            opcodes_left;
+
     // internal stats fields
     #if GRAVITY_VM_STATS
     uint32_t            nfrealloc;                      // to check how many frames reallocation occurred
@@ -1805,7 +1808,9 @@ bool gravity_vm_runmain (gravity_vm *vm, gravity_closure_t *closure) {
 
     // execute main function
     RESET_STATS(vm);
+    vm->opcodes_left = vm->delegate->max_opcodes;
     nanotime_t tstart = nanotime();
+    vm->start_time = tstart;
     bool result = gravity_vm_exec(vm);
     nanotime_t tend = nanotime();
     vm->time = millitime(tstart, tend);

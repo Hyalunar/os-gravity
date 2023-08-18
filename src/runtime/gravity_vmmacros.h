@@ -119,6 +119,16 @@
 // macro the count number of registers needed by the _f function which is the sum of local variables, temp variables and formal parameters
 #define FN_COUNTREG(_f,_nargs)          (MAXNUM(_f->nparams,_nargs) + _f->nlocals + _f->ntemps)
 
+#define CHECK_OPCODE_TIMEOUT() \
+            if (vm->opcodes_left != 0 && --(vm->opcodes_left)) \
+            { \
+                RUNTIME_ERROR("Opcode limit exceeded. Execution stopped."); \
+            } \
+            if (vm->delegate->script_timeout != 0 && nanotime() - vm->start_time > vm->delegate->script_timeout) \
+            { \
+                RUNTIME_ERROR("Timeout reached. Execution stopped"); \
+            }
+
 #if GRAVITY_COMPUTED_GOTO
 #define DECLARE_DISPATCH_TABLE      static void* dispatchTable[] = {                                \
                                     &&RET0,         &&HALT,         &&NOP,          &&RET,          \
@@ -141,14 +151,22 @@
 #if GRAVITY_VM_STATS
 #define DISPATCH()                  DEBUG_STACK();INC_PC;inst = *ip++;op = (opcode_t)OPCODE_GET_OPCODE(inst);UPDATE_STATS(vm,op);goto *dispatchTable[op];
 #else
-#define DISPATCH()                  DEBUG_STACK();INC_PC;inst = *ip++;goto *dispatchTable[op = (opcode_t)OPCODE_GET_OPCODE(inst)];
+#define DISPATCH()                  \
+            DEBUG_STACK(); \
+            INC_PC; \
+            inst = *ip++; \
+            CHECK_OPCODE_TIMEOUT() \
+            goto *dispatchTable[op = (opcode_t)OPCODE_GET_OPCODE(inst)];
+
 #endif
 #define DISPATCH_INNER()            DISPATCH()
 #else
 #define DECLARE_DISPATCH_TABLE
 #define INTERPRET_LOOP              vm_loop: inst = *ip++;op = (opcode_t)OPCODE_GET_OPCODE(inst);UPDATE_STATS(vm,op); switch (op)
 #define CASE_CODE(name)             case name
-#define DISPATCH()                  break
+#define DISPATCH()                  \
+            CHECK_OPCODE_TIMEOUT()  \
+            break
 #define DISPATCH_INNER()            goto vm_loop
 #endif
 
